@@ -1,6 +1,6 @@
 /*
 // *************************************************************************************
-  V2.1  First publish
+  V2.2  First publish
   Toont de dynamische stroomtarieven en de gasprijs van diverse aanbieders op een tft-schermpje. Bron: Enever.nl.
 
   Code geschreven op 23 juni 2023 door Martijn Overman voor Reshift Digital https://reshift.nl/ 
@@ -34,7 +34,7 @@ TFT_eSprite sprite= TFT_eSprite(&tft);
 #define wit 0xFFF0
 
 #define OTAHOST      "https://www.rjdekok.nl/Updates/EnergyDashboard"
-#define VERSION      "v2.1"
+#define VERSION      "v2.2"
 
 RDKOTA rdkOTA(OTAHOST);
 
@@ -78,7 +78,6 @@ Zie voor ontbrekende aanbieders de leganda op https://enever.nl/prijzenfeeds/
 
 // Deze waarden kun je laten staan
 const char* host_cmb = "api.callmebot.com";
-const String url_cmb = "/whatsapp.php?phone=" + String(storage.telefoon) + "&apikey=" + String(storage.apikey_cmb) + "&text=Stroomprijs+nu:+";
 bool berichtverzonden = false;
 uint32_t color = 0;
 bool triangle = false;
@@ -87,9 +86,10 @@ bool toonMorgen = false;
 bool hideGraph = false;
 const char* host = "enever.nl";
 const int httpsPort = 443;
-String url_v = "/api/stroomprijs_vandaag.php?token=" + String(storage.apikey);
-String url_m = "/api/stroomprijs_morgen.php?token=" + String(storage.apikey);
-String url_g = "/api/gasprijs_vandaag.php?token=" + String(storage.apikey);
+
+String url_v = "/api/stroomprijs_vandaag.php?token=";
+String url_m = "/api/stroomprijs_morgen.php?token=";
+String url_g = "/api/gasprijs_vandaag.php?token=";
 const char* ntpserver = "pool.ntp.org";
 const unsigned long interval = 300000; // 5 minuten - tijd tussen twee pogingen om data op te halen
 const unsigned long interval_kort = 60000; // 1 minuut - voor het verversen van het scherm
@@ -212,7 +212,7 @@ bool wifi() {
 }
 
 void sendMessage(String msg) {
-  String url_msg = url_cmb + msg + "+cent";
+  String url_msg = "/whatsapp.php?phone=" + String(storage.telefoon) + "&apikey=" + String(storage.apikey_cmb) + "&text=Stroomprijs+nu:+" + msg + "+cent";
   WiFiClientSecure client;
   client.setInsecure();
   Serial.print("connecting to ");
@@ -673,7 +673,7 @@ void loop() {
   if ((firstrun_g || ((Uur == 7 || Uur == 8 || Uur == 9) && Minuut == 1)) && !gasbinnen && vrijgave_g && wifi()) { // Haal gasprijs van vandaag op
     firstrun_g = false;
     vrijgave_g = false; // Voorkomt lus omdat toestand een minuut duurt
-    if (getData_gas(url_g)) {
+    if (getData_gas(url_g + String(storage.apikey))) {
       gasbinnen = true;
     }
     else {
@@ -687,7 +687,7 @@ void loop() {
   unsigned long currentMillis = millis();
   if (((currentMillis - previousMillis_v >= interval && !vandaagbinnen && vandaag) || firstrun_v) && wifi()) {
     firstrun_v = false;
-    if (getData(url_v, arr_v, true) && datumKlopt) {
+    if (getData(url_v + String(storage.apikey), arr_v, true) && datumKlopt) {
       vandaagbinnen = true;
       Serial.print("Vandaag: ");
       for(int i=0; i<=23; i++) { // Print de inhoud van array met prijzen van vandaag.
@@ -700,7 +700,7 @@ void loop() {
   }
   if (((currentMillis - previousMillis_m >= interval && !morgenbinnen && morgen) || firstrun_m) && wifi()) {
     firstrun_m = false;
-    if (getData(url_m, arr_m, false)) {
+    if (getData(url_m + String(storage.apikey), arr_m, false)) {
       morgenbinnen = true;
       Serial.print("Morgen: ");
       for(int i=0; i<=23; i++) { // Print de inhoud van array met prijzen van morgen.

@@ -1,6 +1,6 @@
 /*
 // *************************************************************************************
-  V2.0  First publish
+  V2.1  First publish
   Toont de dynamische stroomtarieven en de gasprijs van diverse aanbieders op een tft-schermpje. Bron: Enever.nl.
 
   Code geschreven op 23 juni 2023 door Martijn Overman voor Reshift Digital https://reshift.nl/ 
@@ -34,7 +34,7 @@ TFT_eSprite sprite= TFT_eSprite(&tft);
 #define wit 0xFFF0
 
 #define OTAHOST      "https://www.rjdekok.nl/Updates/EnergyDashboard"
-#define VERSION      "v2.0"
+#define VERSION      "v2.1"
 
 RDKOTA rdkOTA(OTAHOST);
 

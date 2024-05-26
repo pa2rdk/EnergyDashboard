@@ -1,5 +1,5 @@
 StoreStruct storage = {
-		'$',                                  // chkDigit;
+		'#',                                  // chkDigit;
 		"yourSSID",                           // ssid[25];
 		"yourWiFiPass!",                      // password[27];
 		"YourEneverAPIKey",                   // apikey[40];

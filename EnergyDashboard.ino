@@ -1,5 +1,6 @@
 /*
 // *************************************************************************************
+  V2.3  Dim backlight
   V2.2  First publish
   Toont de dynamische stroomtarieven en de gasprijs van diverse aanbieders op een tft-schermpje. Bron: Enever.nl.
 
@@ -34,7 +35,7 @@ TFT_eSprite sprite= TFT_eSprite(&tft);
 #define wit 0xFFF0
 
 #define OTAHOST      "https://www.rjdekok.nl/Updates/EnergyDashboard"
-#define VERSION      "v2.2"
+#define VERSION      "v2.3"
 
 RDKOTA rdkOTA(OTAHOST);
 
@@ -49,7 +50,7 @@ struct StoreStruct {
   bool WhatsApp;        // Vul hier 'true' in als je een appje wilt ontvangen en bovenstaande gegevens hebt ingevuld, anders 'false' laten staan
 };
 
-// #include "RDK_Settings.h"
+ //#include "RDK_Settings.h"
  #include "All_Settings.h"
 
 char receivedString[128];
@@ -119,6 +120,7 @@ bool knopActive = false;
 bool vrijgave_g = true;
 bool laagstePrijs = false;
 bool negprijs = false;
+bool ledOn = true;
 String line = "";
 float bigArr[25]; // Tijdelijk waarden opslaan i.v.m. zomer- en wintertijd
 float arr_v[24];
@@ -147,6 +149,7 @@ const int pwmChannel = 0;
 const int frequence = 1000;
 const int resolution = 8;
 const int pwmPin = 14;
+long DisplayOnTime = millis();
 
 void setTimezone(String timezone){
   Serial.printf("  Setting Timezone to %s\n",timezone.c_str());
@@ -552,6 +555,7 @@ void setup() {
   tft.println(F("Wait for Data"));
   ledcSetup(pwmChannel, frequence, resolution);
   ledcAttachPin(pwmPin, pwmChannel);
+  DisplayOnTime = millis();
 }
 
 void drawGraph(int arr[24], bool nu) {
@@ -715,7 +719,24 @@ void loop() {
     markUur();
     previousMillis_blink = currentMillis;
   }
+
+  if (millis()-DisplayOnTime>30000 && ledOn){
+    Serial.println("Backlight off");
+    ledcWrite(pwmChannel, 255);
+    DisplayOnTime = millis();
+    ledOn = false;
+  }
+
   bool pressed = tft.getTouch(&x, &y);
+
+  if (pressed && !ledOn){
+    Serial.println("Backlight on");
+    ledcWrite(pwmChannel, 0);
+    DisplayOnTime = millis();
+    pressed = false;
+    ledOn = true;
+  }
+
   if(currentMillis - previousMillis >= interval_kort || firstrun || ((!digitalRead(knop) || pressed) && vrijgave_k) || vrijgave_t) {
     firstrun = false;
     vrijgave_t = false;
@@ -744,12 +765,15 @@ void loop() {
       Serial.println("Wachten op nieuwe data");
     }
     Serial.print("Tijd: ");Serial.print(u);Serial.print(Uur);Serial.print(".");Serial.print(m);Serial.println(Minuut);
-    if(Uur <= 6 || Uur >= 19) {
-      ledcWrite(pwmChannel, 200);
+    if (ledOn){
+      if(Uur <= 6 || Uur >= 19) {
+        ledcWrite(pwmChannel, 200);
+      }
+      else {
+        ledcWrite(pwmChannel, 63);
+      }
     }
-    else {
-      ledcWrite(pwmChannel, 63);
-    }
+
     if(!berichtverzonden && laagstePrijs && storage.WhatsApp && wifi()) {
       sendMessage(String(Prijs_nu));
     }
